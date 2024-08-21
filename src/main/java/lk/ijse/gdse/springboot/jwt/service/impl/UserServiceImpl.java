@@ -4,12 +4,14 @@ import lk.ijse.gdse.springboot.jwt.dto.UserDTO;
 import lk.ijse.gdse.springboot.jwt.entity.User;
 import lk.ijse.gdse.springboot.jwt.repository.UserRepository;
 import lk.ijse.gdse.springboot.jwt.service.UserService;
+import lk.ijse.gdse.springboot.jwt.util.VarList;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +29,25 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public int saveUser(UserDTO userDTO) {
-        return 0;
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            return VarList.Not_Acceptable;
+        }else {
+            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            userDTO.setRole("DASH_ADMIN");
+            userRepository.save(modelMapper.map(userDTO, User.class));
+            return VarList.Created;
+        }
     }
 
     @Override
     public UserDTO searchUser(String username) {
-        return null;
+        if (userRepository.existsByEmail(username)){
+            User user = userRepository.findByEmail(username);
+            return modelMapper.map(user, UserDTO.class);
+        }else {
+            return null;
+        }
     }
 
     @Override
